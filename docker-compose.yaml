@@ -73,6 +73,8 @@ x-airflow-common:
       condition: service_started
     postgres:
       condition: service_started
+    mysqldatabase:
+      condition: service_started
 
 services:  
   postgres:

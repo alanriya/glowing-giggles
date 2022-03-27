@@ -36,3 +36,10 @@ password=airflow
 
 
 
+
+# deploying to google cloud.
+apt-get install git
+apt-get install docker.io
+sudo chmod 666 /var/run/docker.sock
+docker build . --pull --tag extending_airflow:latest
+docker-compose -f docker-compose.yaml up -d
