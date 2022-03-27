@@ -10,11 +10,15 @@ echo -e "AIRFLOW_UID=$(id -u)\nAIRFLOW_GID=0" > .env
 ## docker compose to restart the 2 applications
 docker-compose up -d --no-deps --build airflow-webserver airflow-scheduler airflow-triggerer
 
+## docker-compose command
+docker-compose -f docker-compose.yaml up -d
+
 ## create airflow with user of airflow and password of airflow
 docker-compose up airflow-init
 
 ## testing dags
 airflow tasks test dag_id task_id 2022-03-21
+
 
 
 ## increase the size of mysql to load larger database
@@ -34,12 +38,26 @@ add this
 user=airflow 
 password=airflow
 
+## delete all volume
+docker system prune --all --volumes
 
 
 
 # deploying to google cloud.
-apt-get install git
-apt-get install docker.io
+sudo apt-get update && sudo apt-get upgrade
+sudo apt-get install git
+sudo apt-get install docker.io
 sudo chmod 666 /var/run/docker.sock
+sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
 docker build . --pull --tag extending_airflow:latest
+mkdir test && cd test
+mkdir {dags,plugins,logs}
+curl "https://airflow.apache.org/docs/apache-airflow/stable/docker-compose.yaml" > docker-compose.yaml
+echo -e "AIRFLOW_UID=$(id -u)\nAIRFLOW_GID=0" > .env
+docker-compose up airflow-init
+docker-compose down
+cd ../glowing-giggles
+echo -e "AIRFLOW_UID=$(id -u)\nAIRFLOW_GID=0" > .env
+sudo chmod -R 777 logs
 docker-compose -f docker-compose.yaml up -d
