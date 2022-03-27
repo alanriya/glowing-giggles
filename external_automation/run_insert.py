@@ -3,8 +3,6 @@ import time
 sys.path.append(os.getcwd())
 from os import listdir
 
-
-
 class InsertWatcher:
     def __init__(self):
         pass

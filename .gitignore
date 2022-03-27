@@ -1,5 +1,6 @@
 .blow
 .env
+.api
 __pycache__
 .pytest_cache
 *sql

@@ -40,6 +40,7 @@ password=airflow
 
 ## delete all volume
 docker system prune --all --volumes
+docker-compose down --volumes --remove-orphans
 
 
 
@@ -51,13 +52,28 @@ sudo chmod 666 /var/run/docker.sock
 sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
 docker build . --pull --tag extending_airflow:latest
-mkdir test && cd test
-mkdir {dags,plugins,logs}
-curl "https://airflow.apache.org/docs/apache-airflow/stable/docker-compose.yaml" > docker-compose.yaml
-echo -e "AIRFLOW_UID=$(id -u)\nAIRFLOW_GID=0" > .env
-docker-compose up airflow-init
-docker-compose down
-cd ../glowing-giggles
 echo -e "AIRFLOW_UID=$(id -u)\nAIRFLOW_GID=0" > .env
 sudo chmod -R 777 logs
+docker-compose up airflow-init
 docker-compose -f docker-compose.yaml up -d
+
+# deploying the fastapi app as a service
+python -m venv .api
+source .api/bin/activate
+pip install -r app/requirements.txt
+
+sudo adduser alan
+# copy .service file to /etc/systemd/system
+# edit the root folders.
+sudo systemctl start gunicornLynx.service 
+sudo systemctl status gunicornLynx.service 
+sudo systemctl enable gunicornLynx.service 
+
+sudo systemctl start externalAutomation.service 
+sudo systemctl status externalAutomation.service 
+sudo systemctl enable externalAutomation.service 
+
+
+
+
+# deploying the external loading process as a service

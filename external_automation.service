@@ -1,0 +1,13 @@
+[Unit]
+Description=external automation to insert data
+After=network.target
+
+[Service]
+User=alan
+Group=alan
+WorkingDirectory=/home/alan/snakey/airflow-template
+Environment="PATH=/home/alan/snakey/airflow-template/.blow/bin"
+ExecStart=/home/alan/snakey/airflow-template/.blow/bin/python external_automation/run_insert.py
+
+[Install]
+WantedBy=multi-user.target
