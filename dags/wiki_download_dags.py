@@ -1,17 +1,17 @@
 from airflow import DAG
 from datetime import datetime, timedelta
 from airflow.sensors.http_sensor import HttpSensor
-from airflow.operators.python_operator import PythonOperator
+from airflow.operators.python_operator import PythonOperator, BranchPythonOperator
 from airflow.sensors.filesystem import FileSensor
 from airflow.operators.bash_operator import BashOperator
 from airflow.operators.dummy import DummyOperator
 from airflow.operators.mysql_operator import MySqlOperator
 from airflow.utils.trigger_rule import TriggerRule
 from airflow.operators.docker_operator import DockerOperator
+from utils.scrap import FileDateScrapper
 from utils.download import download_files
 
-from utils.query import LOAD_METADATA_REQUEST,CREATE_METADATA_REQUEST, CREATE_PAGE_LINK_REQUEST, PAGE_LINK_DATA_REQUEST, CREATE_LINK_DATA_REQUEST, LOAD_LINK_COUNT_REQUEST, CREATE_OUTDATED_PAGE_REQUEST, OUTDATED_PAGE_REQUEST, CREATE_OUTDATED_DIFF_PAGE_REQUEST, OUTDATED_PAGE_BY_CATEGORY_REQUEST
-from utils.limit import ENTRY_LIMIT
+from utils.query import LOAD_METADATA_REQUEST,DELETE_RAW_DATA_REQUEST, CREATE_METADATA_REQUEST, CREATE_PAGE_LINK_REQUEST, PAGE_LINK_DATA_REQUEST, CREATE_LINK_DATA_REQUEST, LOAD_LINK_COUNT_REQUEST, CREATE_OUTDATED_PAGE_REQUEST, OUTDATED_PAGE_REQUEST, CREATE_OUTDATED_DIFF_PAGE_REQUEST, OUTDATED_PAGE_BY_CATEGORY_REQUEST
 
 # check if file is responding from server
 # use bash operator to save the downloads
@@ -29,10 +29,56 @@ default_args = {
 }
 
 with DAG("update_database", default_args = default_args, schedule_interval="0 0 3 * *", template_searchpath='/opt/airflow/downloads', catchup=False) as dag:
+    def get_prev_latest_date_str(**kwargs):
+        with open("/opt/airflow/downloads/filedate.txt", "r") as f:
+            lines = f.readlines()
+            lines = [i.strip() for i in lines]
+            kwargs['ti'].xcom_push(key='prev_latest_date', value=lines[0])
+    
+    def get_current_latest_date_str(**kwargs):
+        FileDateScrapper().get_content(**kwargs)
+
+    
+    GetPrevLatestDate = PythonOperator(
+        task_id = "get_prev_latest_date",
+        python_callable = get_prev_latest_date_str 
+    )
+    
+    GetCurrentLatestDate = PythonOperator(
+        task_id = "get_current_latest_date",
+        python_callable = get_current_latest_date_str
+    )
+    
+    def branch(**kwargs):
+        prev_latest_date =  kwargs['ti'].xcom_pull(task_ids='get_prev_latest_date', key='prev_latest_date')
+        current_latest_date = kwargs['ti'].xcom_pull(task_ids='get_current_latest_date', key='current_latest_date')
+        if prev_latest_date == current_latest_date:
+            return 'skip_task'
+        with open("/opt/airflow/downloads/filedate.txt", "w") as f:
+            f.write(f"{current_latest_date}\n")
+            
+        return 'download_all_required_files' 
+    
+    ForkDownloadOrNot = BranchPythonOperator(
+        task_id='branching',
+        python_callable=branch,
+        provide_context=True,
+    )
+    
+    DoNotDownload = DummyOperator(
+        task_id = "skip_task",
+        trigger_rule=  TriggerRule.ONE_SUCCESS
+    )
     
     DownloadFiles = PythonOperator(
         task_id = "download_all_required_files",
         python_callable = download_files
+    )
+    
+    DeleteRawData = MySqlOperator(
+        task_id = "delete_raw_data",
+        mysql_conn_id = "mysql_conn",
+        sql = DELETE_RAW_DATA_REQUEST
     )
     
     readyForCheckGz = DummyOperator(
@@ -131,7 +177,7 @@ with DAG("update_database", default_args = default_args, schedule_interval="0 0 
     )    
 
     fetchPageLinkData = MySqlOperator(
-        task_id = "insert_page_link_data",
+        task_id = "load_page_link_data",
         mysql_conn_id = 'mysql_conn',
         sql = PAGE_LINK_DATA_REQUEST
     )
@@ -143,7 +189,7 @@ with DAG("update_database", default_args = default_args, schedule_interval="0 0 
     )
     
     loadlinkCountTable = MySqlOperator(
-        task_id = "insert_link_count_data",
+        task_id = "load_link_count_data",
         mysql_conn_id = "mysql_conn",
         sql = LOAD_LINK_COUNT_REQUEST
     )
@@ -170,6 +216,15 @@ with DAG("update_database", default_args = default_args, schedule_interval="0 0 
         task_id = "load_outdated_diff_page_data",
         mysql_conn_id = "mysql_conn",
         sql = OUTDATED_PAGE_BY_CATEGORY_REQUEST
+    )
+    
+    DeleteDownloadedFiles = BashOperator(
+        task_id = "delete_downloaded_files",
+        bash_command = """
+            find $AIRFLOW_HOME/downloads/*.gz -exec rm {} \;
+            find $AIRFLOW_HOME/downloads/*.sql -exec rm {} \; 
+            find $AIRFLOW_HOME/downloads/compute -exec rm {} \; 
+        """
     )
     
     
@@ -208,9 +263,10 @@ with DAG("update_database", default_args = default_args, schedule_interval="0 0 
     #     sql = '''simplewiki-latest-templatelinks.sql''' 
     # )
     
-    DownloadFiles >> readyForCheckGz >> [isCategoryFileAvailable,isCategoryLinkFileAvailable, isPageFileAvailable, isPageLinkFileAvailable, isTemplateLinksFileAvailable] >> readyForUnzip 
+    [GetPrevLatestDate, GetCurrentLatestDate] >> ForkDownloadOrNot >> [DoNotDownload, DownloadFiles] 
+    DownloadFiles >> DeleteRawData >> readyForCheckGz >> [isCategoryFileAvailable,isCategoryLinkFileAvailable, isPageFileAvailable, isPageLinkFileAvailable, isTemplateLinksFileAvailable] >> readyForUnzip 
     readyForUnzip >> unzippingFiles >> isReadyForCompute >> readyForCompute
     readyForCompute >> [createMetaData, createPageLinkRequest, createLinkDataCount, createOutdatedPageTable, createOutdatedDiffPageTable] >> checkReadyForInsert >> loadMetadata
-    loadMetadata >> fetchPageLinkData >> loadlinkCountTable >> loadOutdatedPageTable >> loadOutdatedDiffPageTable
+    loadMetadata >> fetchPageLinkData >> loadlinkCountTable >> loadOutdatedPageTable >> loadOutdatedDiffPageTable >> DeleteDownloadedFiles
     
     

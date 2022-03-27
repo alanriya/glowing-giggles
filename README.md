@@ -30,9 +30,9 @@ VAR=$(docker ps | grep mysql | awk '{print $1}')
 # log on to the container bash and insert the sql scripts.
 docker exec -it $VAR /bin/bash -c dir
 
-# In /etc/mysql/my.cnf
-!includedir /etc/mysql/conf.d/
-!includedir /etc/mysql/mysql.conf.d/
+# In /etc/mysql/conf.d/mysql.cnf
+<!-- !includedir /etc/mysql/conf.d/
+!includedir /etc/mysql/mysql.conf.d/ -->
 add this 
 [mysql]
 user=airflow 
@@ -42,6 +42,12 @@ password=airflow
 docker system prune --all --volumes
 docker-compose down --volumes --remove-orphans
 
+# after setting up, expose port 8080 and 8000
+gcloud compute firewall-rules create default-allow-http-80 \
+    --allow tcp:80 \
+    --source-ranges 0.0.0.0/0 \
+    --target-tags http-server \
+    --description "Allow port 80 access to http-server"
 
 
 # deploying to google cloud.
@@ -58,9 +64,11 @@ docker-compose up airflow-init
 docker-compose -f docker-compose.yaml up -d
 
 # deploying the fastapi app as a service
+sudo apt install python3.9-venv
 python -m venv .api
 source .api/bin/activate
 pip install -r app/requirements.txt
+
 
 sudo adduser alan
 # copy .service file to /etc/systemd/system

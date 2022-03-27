@@ -5,6 +5,7 @@ from airflow.operators.dummy import DummyOperator
 from airflow.utils.trigger_rule import TriggerRule
 from airflow.operators.mysql_operator import MySqlOperator
 from airflow.operators.python_operator import PythonOperator
+from airflow.operators.bash_operator import BashOperator
 from airflow.hooks.mysql_hook import MySqlHook
 
 from utils.query import LOAD_METADATA_REQUEST,CREATE_METADATA_REQUEST, CREATE_PAGE_LINK_REQUEST, PAGE_LINK_DATA_REQUEST, CREATE_LINK_DATA_REQUEST, LOAD_LINK_COUNT_REQUEST, CREATE_OUTDATED_PAGE_REQUEST, OUTDATED_PAGE_REQUEST, CREATE_OUTDATED_DIFF_PAGE_REQUEST, OUTDATED_PAGE_BY_CATEGORY_REQUEST
@@ -57,7 +58,7 @@ with DAG("compute_required_data", default_args = default_args, schedule_interval
     )    
 
     fetchPageLinkData = MySqlOperator(
-        task_id = "insert_page_link_data",
+        task_id = "load_page_link_data",
         mysql_conn_id = 'mysql_conn',
         sql = PAGE_LINK_DATA_REQUEST
     )
@@ -69,7 +70,7 @@ with DAG("compute_required_data", default_args = default_args, schedule_interval
     )
     
     loadlinkCountTable = MySqlOperator(
-        task_id = "insert_link_count_data",
+        task_id = "load_link_count_data",
         mysql_conn_id = "mysql_conn",
         sql = LOAD_LINK_COUNT_REQUEST
     )
@@ -96,6 +97,15 @@ with DAG("compute_required_data", default_args = default_args, schedule_interval
         task_id = "load_outdated_diff_page_data",
         mysql_conn_id = "mysql_conn",
         sql = OUTDATED_PAGE_BY_CATEGORY_REQUEST
+    )
+    
+    DeleteDownloadedFiles = BashOperator(
+        task_id = "delete_downloaded_files",
+        bash_command = """
+            find $AIRFLOW_HOME/downloads/*.gz -exec rm {} \;
+            find $AIRFLOW_HOME/downloads/*.sql -exec rm {} \; 
+            find $AIRFLOW_HOME/downloads/compute -exec rm {} \; 
+        """
     )
     
     # create table
@@ -168,7 +178,7 @@ with DAG("compute_required_data", default_args = default_args, schedule_interval
     
     
     [createMetaData, createPageLinkRequest, createLinkDataCount, createOutdatedPageTable, createOutdatedDiffPageTable] >> checkReadyForInsert >> loadMetadata
-    loadMetadata >> fetchPageLinkData >> loadlinkCountTable >> loadOutdatedPageTable >> loadOutdatedDiffPageTable
+    loadMetadata >> fetchPageLinkData >> loadlinkCountTable >> loadOutdatedPageTable >> loadOutdatedDiffPageTable >> DeleteDownloadedFiles
     
     
     

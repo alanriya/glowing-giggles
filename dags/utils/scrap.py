@@ -4,7 +4,8 @@ the webscrapper library is used to check for the find all the links available on
 import os, sys
 sys.path.append(os.getcwd())
 
-from urls import INDEX_PAGE
+
+from dags.utils.urls import INDEX_PAGE
 import requests
 from bs4 import BeautifulSoup
 import pdb
@@ -16,7 +17,7 @@ class FileDateScrapper:
     def __init__(self, url = INDEX_PAGE):
         self.url = url
     
-    def get_content(self):
+    def get_content(self, **kwargs):
         r = requests.get(self.url)
         dates = []
         soup = BeautifulSoup(r.content, "html5lib")
@@ -27,25 +28,12 @@ class FileDateScrapper:
                 continue
             dates.append(a_tag["href"])            
         self.dates = dates
-        self.save_content()
+        self.get_current_latest_date(**kwargs)
 
-    def save_content(self):
+    def get_current_latest_date(self, **kwargs):
         """
         method to only save content when the last date is updated
         """
+        kwargs['ti'].xcom_push(key='current_latest_date', value=self.dates[-1])
         
-        lines = None
-        flag = False
-        with open("./downloads/filedate.txt", "r") as f:
-            lines = f.readlines()
-            lines = [i.strip() for i in lines]
-            if self.dates[-1] not in lines:
-                flag = True
-            else: 
-                return False
-        if flag:
-            with open("./downloads/filedate.txt", "a") as f:
-                f.write(f"{self.dates[-1]}\n")
-        return True
 
-FileDateScrapper().get_content()
