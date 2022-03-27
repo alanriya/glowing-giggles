@@ -106,71 +106,71 @@ with DAG("update_database", default_args = default_args, schedule_interval="0 0 
         trigger_rule=  TriggerRule.ONE_SUCCESS
     )
     
-    # checkReadyForInsert = DummyOperator(
-    #     task_id = "ready_for_data_insert",
-    #     trigger_rule=  TriggerRule.ALL_SUCCESS
-    # )
+    checkReadyForInsert = DummyOperator(
+        task_id = "ready_for_data_insert",
+        trigger_rule=  TriggerRule.ALL_SUCCESS
+    )
     
-    # # create table
-    # createMetaData = MySqlOperator(
-    #     task_id = "create_metadata",
-    #     mysql_conn_id = "mysql_conn",
-    #     sql = CREATE_METADATA_REQUEST
-    # )
+    # create table
+    createMetaData = MySqlOperator(
+        task_id = "create_metadata",
+        mysql_conn_id = "mysql_conn",
+        sql = CREATE_METADATA_REQUEST
+    )
     
-    # loadMetadata = MySqlOperator(
-    #     task_id = "load_metadata",
-    #     mysql_conn_id = "mysql_conn",
-    #     sql = LOAD_METADATA_REQUEST
-    # )
+    loadMetadata = MySqlOperator(
+        task_id = "load_metadata",
+        mysql_conn_id = "mysql_conn",
+        sql = LOAD_METADATA_REQUEST
+    )
 
-    # createPageLinkRequest = MySqlOperator(
-    #     task_id = "create_page_link_data",
-    #     mysql_conn_id = "mysql_conn",
-    #     sql = CREATE_PAGE_LINK_REQUEST
-    # )    
+    createPageLinkRequest = MySqlOperator(
+        task_id = "create_page_link_data",
+        mysql_conn_id = "mysql_conn",
+        sql = CREATE_PAGE_LINK_REQUEST
+    )    
 
-    # fetchPageLinkData = MySqlOperator(
-    #     task_id = "insert_page_link_data",
-    #     mysql_conn_id = 'mysql_conn',
-    #     sql = PAGE_LINK_DATA_REQUEST
-    # )
+    fetchPageLinkData = MySqlOperator(
+        task_id = "insert_page_link_data",
+        mysql_conn_id = 'mysql_conn',
+        sql = PAGE_LINK_DATA_REQUEST
+    )
 
-    # createLinkDataCount = MySqlOperator(
-    #     task_id = "create_link_data_count",
-    #     mysql_conn_id = "mysql_conn",
-    #     sql = CREATE_LINK_DATA_REQUEST
-    # )
+    createLinkDataCount = MySqlOperator(
+        task_id = "create_link_data_count",
+        mysql_conn_id = "mysql_conn",
+        sql = CREATE_LINK_DATA_REQUEST
+    )
     
-    # loadlinkCountTable = MySqlOperator(
-    #     task_id = "insert_link_count_data",
-    #     mysql_conn_id = "mysql_conn",
-    #     sql = LOAD_LINK_COUNT_REQUEST
-    # )
+    loadlinkCountTable = MySqlOperator(
+        task_id = "insert_link_count_data",
+        mysql_conn_id = "mysql_conn",
+        sql = LOAD_LINK_COUNT_REQUEST
+    )
     
-    # createOutdatedPageTable = MySqlOperator(
-    #     task_id = "create_outdated_page_data",
-    #     mysql_conn_id = "mysql_conn",
-    #     sql = CREATE_OUTDATED_PAGE_REQUEST
-    # )
+    createOutdatedPageTable = MySqlOperator(
+        task_id = "create_outdated_page_data",
+        mysql_conn_id = "mysql_conn",
+        sql = CREATE_OUTDATED_PAGE_REQUEST
+    )
     
-    # loadOutdatedPageTable = MySqlOperator(
-    #     task_id = "load_outdated_page_data",
-    #     mysql_conn_id = "mysql_conn",
-    #     sql = OUTDATED_PAGE_REQUEST
-    # )
+    loadOutdatedPageTable = MySqlOperator(
+        task_id = "load_outdated_page_data",
+        mysql_conn_id = "mysql_conn",
+        sql = OUTDATED_PAGE_REQUEST
+    )
     
-    # createOutdatedDiffPageTable = MySqlOperator(
-    #     task_id = "create_outdated_diff_page_data",
-    #     mysql_conn_id = "mysql_conn",
-    #     sql = CREATE_OUTDATED_DIFF_PAGE_REQUEST
-    # )
+    createOutdatedDiffPageTable = MySqlOperator(
+        task_id = "create_outdated_diff_page_data",
+        mysql_conn_id = "mysql_conn",
+        sql = CREATE_OUTDATED_DIFF_PAGE_REQUEST
+    )
     
-    # loadOutdatedDiffPageTable = MySqlOperator(
-    #     task_id = "load_outdated_diff_page_data",
-    #     mysql_conn_id = "mysql_conn",
-    #     sql = OUTDATED_PAGE_BY_CATEGORY_REQUEST
-    # )
+    loadOutdatedDiffPageTable = MySqlOperator(
+        task_id = "load_outdated_diff_page_data",
+        mysql_conn_id = "mysql_conn",
+        sql = OUTDATED_PAGE_BY_CATEGORY_REQUEST
+    )
     
     
     
@@ -210,7 +210,7 @@ with DAG("update_database", default_args = default_args, schedule_interval="0 0 
     
     DownloadFiles >> readyForCheckGz >> [isCategoryFileAvailable,isCategoryLinkFileAvailable, isPageFileAvailable, isPageLinkFileAvailable, isTemplateLinksFileAvailable] >> readyForUnzip 
     readyForUnzip >> unzippingFiles >> isReadyForCompute >> readyForCompute
-    # readyForCompute >> [createMetaData, createPageLinkRequest, createLinkDataCount, createOutdatedPageTable, createOutdatedDiffPageTable] >> checkReadyForInsert >> loadMetadata
-    # loadMetadata >> fetchPageLinkData >> loadlinkCountTable >> loadOutdatedPageTable >> loadOutdatedDiffPageTable
+    readyForCompute >> [createMetaData, createPageLinkRequest, createLinkDataCount, createOutdatedPageTable, createOutdatedDiffPageTable] >> checkReadyForInsert >> loadMetadata
+    loadMetadata >> fetchPageLinkData >> loadlinkCountTable >> loadOutdatedPageTable >> loadOutdatedDiffPageTable
     
     
