@@ -29,7 +29,7 @@ docker exec -it $VAR /bin/bash -c dir
 # In /etc/mysql/my.cnf
 !includedir /etc/mysql/conf.d/
 !includedir /etc/mysql/mysql.conf.d/
-add this
+add this 
 [mysql]
 user=airflow 
 password=airflow

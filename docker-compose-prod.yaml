@@ -91,29 +91,29 @@ services:
       retries: 5
     restart: always
 
-  mysqldatabase:
-    image: mysql:8.0
-    restart: always
-    environment:
-      MYSQL_DATABASE: 'airflow'
-      # So you don't have to use root, but you can if you like
-      MYSQL_USER: 'airflow'
-      # You can use whatever password you like
-      MYSQL_PASSWORD: 'airflow'
-      # Password for root access
-      MYSQL_ROOT_PASSWORD: 'airflow'
-    ports:
-      # <Port exposed> : < MySQL Port running inside container>
-      - '3306:3306'
-    healthcheck:
-      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
-      interval: 5s
-      retries: 5
-    expose:
-      - '3306'
-    volumes:
-      - my-db:/var/lib/mysql
-      - ./downloads:/opt/airflow/downloads
+  # mysqldatabase:
+  #   image: mysql:8.0
+  #   restart: always
+  #   environment:
+  #     MYSQL_DATABASE: 'airflow'
+  #     # So you don't have to use root, but you can if you like
+  #     MYSQL_USER: 'airflow'
+  #     # You can use whatever password you like
+  #     MYSQL_PASSWORD: 'airflow'
+  #     # Password for root access
+  #     MYSQL_ROOT_PASSWORD: 'airflow'
+  #   ports:
+  #     # <Port exposed> : < MySQL Port running inside container>
+  #     - '3306:3306'
+  #   healthcheck:
+  #     test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+  #     interval: 5s
+  #     retries: 5
+  #   expose:
+  #     - '3306'
+  #   volumes:
+  #     - my-db:/var/lib/mysql
+  #     - ./downloads:/opt/airflow/downloads
 
   redis:
     image: redis:latest
