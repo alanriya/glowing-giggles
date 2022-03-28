@@ -37,7 +37,6 @@ sudo chmod +x /usr/local/bin/docker-compose
 docker build . --pull --tag extending_airflow:latest
 echo -e "AIRFLOW_UID=$(id -u)\nAIRFLOW_GID=0" > .env
 echo -e "DATABASE_HOSTNAME=localhost\nDATABASE_PORT=3306\nDATABASE_PASSWORD=airflow\nDATABASE_USERNAME=airflow\nDATABASE_NAME=airflow" >> .env
-sudo chmod -R 777 logs
 docker-compose up airflow-init
 docker-compose -f docker-compose.yaml up -d
 nohup python external_automation/run_insert.py &
