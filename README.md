@@ -1,4 +1,4 @@
-### Wikimedia
+### Project: Wikimedia
 A project that decides whether to ingest the latest data based on the update timestamp of the latest folder. when the current latest date from the website is not the same as the previous date within the application, the data pipeline will start by first downloading the zipped dump files into the downloads folder which is mounted on the airflow container. the application is build with scability in mind, there are 4 folders mounted: downloads, dags, logs and plugins. this is for further extension if there is a need to do customed plugins. 
 
 the api component is done using fastapi which provides classification of endpoints by tags. there are 2 endpoints:
@@ -16,7 +16,7 @@ Technologies used:
 - bash
 - mysql and postgresql.
 
-main data pipeline is built based on a customed apache airflow image with some additional packages installed for the customised task in the dag. metadata for airflow is hosted on postgresql, the data from Wikimedia is on the mysql.
+main data pipeline is built based on a customed apache airflow image with some additional packages installed for the customised task in the dag. metadata for airflow is hosted on postgresql, the data from Wikipedia is on the mysql.
 
 airflow scheduler, webserver, triggerer, celery-worker, mysql and postgresql are spin up using docker-compose.
 
