@@ -36,3 +36,4 @@ EnvironmentFile=/home/alan_leeyungchong/glowing-giggles/.env
 ExecStart=/home/alan_leeyungchong/glowing-giggles/.api/bin/gunicorn -w 4 -k uvicorn.workers.UvicornWorker app.main:app --bind 0.0.0.0:8000
 [Install]
 WantedBy=multi-user.target
+

@@ -1,9 +1,9 @@
-DELETE_RAW_DATA_REQUEST = """
+DELETE_RAW_DATA_REQUEST2 = """
             DROP TABLE IF EXISTS category;
             DROP TABLE IF EXISTS categorylinks;
         """
         
-DELETE_RAW_DATA_REQUEST2= """
+DELETE_RAW_DATA_REQUEST = """
             DROP TABLE IF EXISTS category;
             DROP TABLE IF EXISTS categorylinks;
             DROP TABLE IF EXISTS page;

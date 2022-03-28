@@ -1,58 +1,31 @@
-To install third party library in airflow, extend the docker image
-## find the dockerfile in current folder to build.
-docker build . --pull --tag extending_airflow:latest 
+### Wikimedia
+A project that decides whether to ingest the latest data based on the update timestamp of the latest folder. when the current latest date from the website is not the same as the previous date within the application, the data pipeline will start by first downloading the zipped dump files into the downloads folder which is mounted on the airflow container. the application is build with scability in mind, there are 4 folders mounted: downloads, dags, logs and plugins. this is for further extension if there is a need to do customed plugins. 
 
-## add environment
-echo -e "AIRFLOW_UID=$(id -u)\nAIRFLOW_GID=0" > .env
+the api component is done using fastapi which provides classification of endpoints by tags. there are 2 endpoints:
+- /query for submitting general query.
+- /outdated_post for querying the most outdated page.
 
-./scripts/ci/tools/verify_docker_image.sh PROD extending_airflow:latest 
+airflow UI can be found at http://VM_external_vm:8080
+fastapi UI can be found at http://VM_external_vm:8000/docs
 
-## docker compose to restart the 2 applications
-docker-compose up -d --no-deps --build airflow-webserver airflow-scheduler airflow-triggerer
+### Technologies used:
+Technologies used:
+- docker-compose
+- docker
+- python
+- bash
+- mysql and postgresql.
 
-## docker-compose command
-docker-compose -f docker-compose.yaml up -d
+main data pipeline is built based on a customed apache airflow image with some additional packages installed for the customised task in the dag. metadata for airflow is hosted on postgresql, the data from Wikimedia is on the mysql.
 
-## create airflow with user of airflow and password of airflow
-docker-compose up airflow-init
+airflow scheduler, webserver, triggerer, celery-worker, mysql and postgresql are spin up using docker-compose.
 
-## testing dags
-airflow tasks test dag_id task_id 2022-03-21
+fastapi is used for the frontend UI. it is hosted on gunicorn and deployed on the cloud machine as a systemd application.
 
+### getting started and deployment commands
 
-
-## increase the size of mysql to load larger database
-docker exec -it my_mysql bash -c "echo 'max_allowed_packet = 1024M' >> /etc/mysql/mysql.conf.d/mysqld.cnf" 
-docker restart my_mysql
-
-# get the docker container id
-VAR=$(docker ps | grep mysql | awk '{print $1}')
-# log on to the container bash and insert the sql scripts.
-docker exec -it $VAR /bin/bash -c dir
-
-# In /etc/mysql/conf.d/mysql.cnf
-<!-- !includedir /etc/mysql/conf.d/
-!includedir /etc/mysql/mysql.conf.d/ -->
-add this 
-[mysql]
-user=airflow 
-password=airflow
-
-## delete all volume
-docker system prune --all --volumes
-docker-compose down --volumes --remove-orphans
-
-sudo /sbin/sysctl -w net.ipv4.tcp_keepalive_time=60 net.ipv4.tcp_keepalive_intvl=60 net.ipv4.tcp_keepalive_probes=5
-
-# after setting up, expose port 8080 and 8000
-gcloud compute firewall-rules create default-allow-http-80 \
-    --allow tcp:80 \
-    --source-ranges 0.0.0.0/0 \
-    --target-tags http-server \
-    --description "Allow port 80 access to http-server"
-
-
-# deploying to google cloud.
+The following is for getting the docker container to be up.
+```
 sudo apt-get update && sudo apt-get upgrade
 sudo apt-get install git
 git clone https://github.com/alanriya/glowing-giggles.git
@@ -68,26 +41,51 @@ sudo chmod -R 777 logs
 docker-compose up airflow-init
 docker-compose -f docker-compose.yaml up -d
 nohup python external_automation/run_insert.py &
+```
+After docker-compose shows all services are healthy, go to the mysql docker container, 
 
+In /etc/mysql/conf.d/mysql.cnf, below [mysql], add in
+user=airflow
+password=airflow
 
+This is to ensure no password is needed when accessing mysql server.
 
-# deploying the fastapi app as a service
+The following is for deploying the fastapi app:
+```
 sudo apt install python3.9-venv
 python -m venv .api
 source .api/bin/activate
 pip install -r app/requirements.txt
+```
 
-# copy .service file to /etc/systemd/system
-# edit the root folders.
-sudo systemctl start gunicornLynx.service 
-sudo systemctl status gunicornLynx.service 
-sudo systemctl enable gunicornLynx.service 
+The following is for making fastapi to service:
 
-sudo systemctl start externalAutomation.service 
-sudo systemctl status externalAutomation.service 
-sudo systemctl enable externalAutomation.service 
+copy .service file to /etc/systemd/system,
 
+```
+sudo systemctl start service_name.service 
+sudo systemctl status service_name.service 
+sudo systemctl enable service_name.service 
+```
+### Some useful commands:
+For docker:
+- remove all docker container: docker system prune --all --volumes
+- remove orphan container: docker-compose down --volumes --remove-orphans
 
+For docker-compose:
+- bring up the container: docker-compose -f docker-compose.yaml up -d
+- bring down the docker container: docker-compose down
 
+For google cloud platform:
+- To expose the ports so that the application can be found on public ip,
+```
+gcloud compute firewall-rules create default-allow-http-80 \
+    --allow tcp:80 \
+    --source-ranges 0.0.0.0/0 \
+    --target-tags http-server \
+    --description "Allow port 80 access to http-server"
+```
 
-# deploying the external loading process as a service
+### Some improvements to make project more robust
+- test cases for dags
+- CD/CI deployment using github action
