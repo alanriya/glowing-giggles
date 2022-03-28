@@ -24,8 +24,8 @@ from utils.query import LOAD_METADATA_REQUEST,DELETE_RAW_DATA_REQUEST, CREATE_ME
 default_args = {
     "owner" : "Alan",
     "start_date": datetime(2022,3,23),
-    "retries" : 2, 
-    "retry_delay" : timedelta(seconds=5)
+    "retries" : 10, 
+    "retry_delay" : timedelta(seconds=300)
 }
 
 with DAG("update_database", default_args = default_args, schedule_interval="0 0 3 * *", template_searchpath='/opt/airflow/downloads', catchup=False) as dag:
@@ -127,7 +127,7 @@ with DAG("update_database", default_args = default_args, schedule_interval="0 0 
     )
     
     readyForUnzip = DummyOperator(
-        task_id = "read_for_unzip",
+        task_id = "ready_for_unzip",
         trigger_rule=  TriggerRule.ALL_SUCCESS
     )
     
@@ -143,8 +143,7 @@ with DAG("update_database", default_args = default_args, schedule_interval="0 0 
         task_id="is_ready_for_compute",
         fs_conn_id="downloadsFilePath",
         filepath="compute",
-        poke_interval=5,
-        timeout=20
+        poke_interval=30,
     )
     
     readyForCompute = DummyOperator(

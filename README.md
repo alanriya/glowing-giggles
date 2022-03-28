@@ -42,6 +42,8 @@ password=airflow
 docker system prune --all --volumes
 docker-compose down --volumes --remove-orphans
 
+sudo /sbin/sysctl -w net.ipv4.tcp_keepalive_time=60 net.ipv4.tcp_keepalive_intvl=60 net.ipv4.tcp_keepalive_probes=5
+
 # after setting up, expose port 8080 and 8000
 gcloud compute firewall-rules create default-allow-http-80 \
     --allow tcp:80 \
@@ -53,15 +55,21 @@ gcloud compute firewall-rules create default-allow-http-80 \
 # deploying to google cloud.
 sudo apt-get update && sudo apt-get upgrade
 sudo apt-get install git
+git clone https://github.com/alanriya/glowing-giggles.git
+cd ~/glowing-giggles
 sudo apt-get install docker.io
 sudo chmod 666 /var/run/docker.sock
 sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
 docker build . --pull --tag extending_airflow:latest
 echo -e "AIRFLOW_UID=$(id -u)\nAIRFLOW_GID=0" > .env
+echo -e "DATABASE_HOSTNAME=localhost\nDATABASE_PORT=3306\nDATABASE_PASSWORD=airflow\nDATABASE_USERNAME=airflow\nDATABASE_NAME=airflow" >> .env
 sudo chmod -R 777 logs
 docker-compose up airflow-init
 docker-compose -f docker-compose.yaml up -d
+nohup python external_automation/run_insert.py &
+
+
 
 # deploying the fastapi app as a service
 sudo apt install python3.9-venv
@@ -69,8 +77,6 @@ python -m venv .api
 source .api/bin/activate
 pip install -r app/requirements.txt
 
-
-sudo adduser alan
 # copy .service file to /etc/systemd/system
 # edit the root folders.
 sudo systemctl start gunicornLynx.service 

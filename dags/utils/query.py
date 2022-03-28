@@ -1,9 +1,14 @@
 DELETE_RAW_DATA_REQUEST = """
-            DELETE FROM category;
-            DELETE FROM categorylinks;
-            DELETE FROM page;
-            DELETE FROM pagelinks;
-            DELETE FROM templatelinks;
+            DROP TABLE IF EXISTS category;
+            DROP TABLE IF EXISTS categorylinks;
+        """
+        
+DELETE_RAW_DATA_REQUEST2= """
+            DROP TABLE IF EXISTS category;
+            DROP TABLE IF EXISTS categorylinks;
+            DROP TABLE IF EXISTS page;
+            DROP TABLE IF EXISTS pagelinks;
+            DROP TABLE IF EXISTS templatelinks;
         """
 
 CREATE_METADATA_REQUEST = """
