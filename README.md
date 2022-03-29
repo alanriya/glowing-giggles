@@ -73,7 +73,7 @@ pip install -r app/requirements.txt
 To start the development server for fastapi:
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
 
-In external automation, change the 'current_dir' variable to the path of your root folder (otherwise the external process will not work.)
+In external automation, run_insert.py, change the 'current_dir' variable to the path of your root folder (otherwise the external process will not work.)
 
 The following is for making fastapi to service:
 
